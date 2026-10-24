@@ -8,12 +8,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ClientGridMixin {
     @Inject(method = "angleAt(III)B", at = @At("HEAD"), cancellable = true, remap = false)
     private static void streamcontrol$angle(int x,int y,int z,CallbackInfoReturnable<Byte> cir) {
-        if (!net.neoforged.fml.util.thread.EffectiveSide.get().isClient()) return;
-        var r = FlowOverrides.clientAt(x,y,z); if (r != null) cir.setReturnValue(StreamFlowGrid.encode(r.dx(),r.dz()));
+        var r = FlowOverrides.clientAt(x,y,z); if (r != null) cir.setReturnValue(FlowOverrides.visualAngle(r));
     }
     @Inject(method = "speedAt(III)D", at = @At("HEAD"), cancellable = true, remap = false)
     private static void streamcontrol$speed(int x,int y,int z,CallbackInfoReturnable<Double> cir) {
-        if (!net.neoforged.fml.util.thread.EffectiveSide.get().isClient()) return;
         var r = FlowOverrides.clientAt(x,y,z); if (r != null) cir.setReturnValue(r.still() ? 0 : r.strength());
     }
 }

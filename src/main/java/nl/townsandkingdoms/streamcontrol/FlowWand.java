@@ -5,6 +5,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.*;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.*;
@@ -22,11 +23,9 @@ public final class FlowWand extends Item {
     @Override public InteractionResult useOn(UseOnContext context) {
         var p = context.getPlayer(); if (p == null) return InteractionResult.PASS;
         if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof ControllerEntity be) {
-            if (!context.getLevel().isClientSide && allowed(p, context.getClickedPos(), context.getItemInHand())) {
-                var n = settings(context.getItemInHand());
-                if (p.isShiftKeyDown()) be.setRadius(be.radius() % ControlConfig.MAX_RADIUS.get() + 1);
-                else be.configure(p.getDirection(), ControlConfig.radius(n.contains("Radius") ? n.getInt("Radius") : ControlConfig.DEFAULT_RADIUS.get()), ControlConfig.strength(n.contains("Strength") ? n.getDouble("Strength") : ControlConfig.SPEED.get()));
-                message(p, "message.streamcontrol.controller", be.radius());
+            if (!context.getLevel().isClientSide && allowed(p, context.getClickedPos(), context.getItemInHand())
+                    && p instanceof ServerPlayer player) {
+                ControlNetwork.open(player, be);
             }
             return InteractionResult.sidedSuccess(context.getLevel().isClientSide);
         }

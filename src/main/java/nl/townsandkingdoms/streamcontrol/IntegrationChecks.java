@@ -60,6 +60,12 @@ public final class IntegrationChecks {
             check(data.at(16,120,16).still(),"Still block precedence");
             check(level.getFluidState(p).getFlow(level,p).lengthSqr() < 1e-10,"Stillness did not cancel baked stream flow");
             check(StreamFlowGrid.speedForPhysics(level,16,120,16) == 0,"Stillness did not cancel vessel drift");
+            check(FlowOverrides.visualAngle(still) == StreamFlowGrid.encode(0,0),
+                "Stillwater client direction was not neutral");
+            check(StreamFlowGrid.angleForPhysics(level,16,120,16) == StreamFlowGrid.encode(0,0),
+                "Stillwater vessel direction was not neutral");
+            check(FlowOverrides.visualAngle(directed) == StreamFlowGrid.encode(1,0),
+                "Directed water client direction changed");
             check(data.at(20,120,16).key() == directed.key(),"Stillness leaked beyond radius");
             results.put("bakedWaterStillnessAndOverlap",true);
             for (int x = -2; x <= 2; x++) for (int z = -2; z <= 2; z++)
@@ -74,11 +80,35 @@ public final class IntegrationChecks {
             var reloaded = ControlData.load(data.save(new CompoundTag(),level.registryAccess()),level.registryAccess());
             check(reloaded.at(16,120,16).still() && reloaded.at(20,120,16).strength() == 0.75,"Saved data round trip");
             results.put("savedDataRoundTrip",true);
+            // Two pools inside one radius must not become connected just because the region overlaps both.
+            BlockPos connectedTest = p.offset(96,0,0);
+            level.setBlock(connectedTest, Blocks.STONE.defaultBlockState(), 3);
+            level.setBlock(connectedTest.east(), Blocks.WATER.defaultBlockState(), 3);
+            level.setBlock(connectedTest.east(2), Blocks.STONE.defaultBlockState(), 3);
+            level.setBlock(connectedTest.east(3), Blocks.WATER.defaultBlockState(), 3);
+            long[] waterMask = ConnectedWater.scan(level, connectedTest, net.minecraft.core.Direction.EAST, 4, 0);
+            var connected = new FlowRegion(103, connectedTest, 4, 0, 1, 0, 0.5, true, true,
+                owner, data.next(), true, waterMask);
+            check(connected.contains(connectedTest.getX()+1,connectedTest.getY(),connectedTest.getZ()),
+                "Connected water was not included");
+            check(!connected.contains(connectedTest.getX()+3,connectedTest.getY(),connectedTest.getZ()),
+                "Separate water pool was incorrectly included");
+            data.put(level, connected);
+            var connectedReload = ControlData.load(data.save(new CompoundTag(), level.registryAccess()),level.registryAccess());
+            check(connectedReload.byKey(103).connectedOnly()
+                && !connectedReload.byKey(103).contains(connectedTest.getX()+3, connectedTest.getY(), connectedTest.getZ()),
+                "Connected-water mask did not persist");
+            results.put("connectedWaterIsolationAndPersistence", true);
             var buf = new RegistryFriendlyByteBuf(Unpooled.buffer(),level.registryAccess());
             try {
                 var packet = new ControlNetwork.Update(level.dimension().location().toString(),false,directed.save(),0);
                 ControlNetwork.Update.CODEC.encode(buf,packet); var decoded = ControlNetwork.Update.CODEC.decode(buf);
                 check(FlowRegion.load(decoded.region()).equals(directed),"Network codec round trip");
+                buf.clear();
+                var edit = new ControlNetwork.Configure(connectedTest.asLong(), 4, 0.5, true,
+                    net.minecraft.core.Direction.EAST.get3DDataValue());
+                ControlNetwork.Configure.CODEC.encode(buf,edit);
+                check(ControlNetwork.Configure.CODEC.decode(buf).equals(edit), "Controller edit codec round trip");
             } finally { buf.release(); }
             results.put("networkCodecRoundTrip",true);
             var nether = server.getLevel(Level.NETHER);
@@ -103,7 +133,7 @@ public final class IntegrationChecks {
             check(server.getCommands().getDispatcher().execute("streamcontrol status",server.createCommandSourceStack())==1,"Status command");
             results.put("passed",true);
         } catch (Throwable t) { results.put("passed",false);results.put("error",t.toString()); t.printStackTrace(); }
-        finally { data.remove(level,101);data.remove(level,102); }
+        finally { data.remove(level,101);data.remove(level,102);data.remove(level,103); }
         try { Files.writeString(FMLPaths.GAMEDIR.get().resolve("streamcontrol-integration-results.json"),new GsonBuilder().setPrettyPrinting().create().toJson(results)); }
         catch (Exception e) { e.printStackTrace(); }
         System.out.println("STREAMCONTROL_TEST " + results); server.halt(false);

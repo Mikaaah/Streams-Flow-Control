@@ -1,0 +1,44 @@
+name: NeoForge 1.21.1 build
+
+on:
+  push:
+    branches:
+      - main
+      - fix/neoforge-1.21.1-stillwater-render
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Fetch Streams Reflowing 2.15.2 (build dependency)
+        run: |
+          mkdir -p libs
+          curl --fail --location --retry 3 \
+            --output libs/StreamsReflowing-1.21.1-neoforge-2.15.2.jar \
+            https://cdn.modrinth.com/data/oLS8HdJ1/versions/vbJ5meb8/StreamsReflowing-1.21.1-neoforge-2.15.2.jar
+          test -s libs/StreamsReflowing-1.21.1-neoforge-2.15.2.jar
+      - name: Compile and package addon
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon clean build
+      - name: Upload test JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-control-neoforge-1.21.1-stillwater-test
+          path: build/libs/streams-flow-control-*.jar
+          if-no-files-found: error

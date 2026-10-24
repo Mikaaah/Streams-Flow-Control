@@ -5,9 +5,11 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "WaterFlowMixin",
+    "FluidStateFlowMixin",
     "BakedFlowMixin",
     "GridFlowMixin",
-    "ClientGridMixin"
+    "ClientGridMixin",
+    "SurfaceParticlesMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -36,13 +36,13 @@ Dedicated-server checks passed for all seven ports: ordinary and baked water, bo
 | **Current Generator** | Maintain a directional current; rotate its top arrow to steer the flow. |
 | **Stillwater Anchor** | Calm currents around a dock or mooring. |
 
-All three items have survival recipes. Controller radius and strength are adjustable; redstone power disables a controller. Break it to restore the underlying current.
+All three items have survival recipes. Right-click either controller to open its settings screen: adjust radius (with diameter and vertical reach), choose connected-water-only behavior, and set flow speed and direction on the Current Generator. Redstone power disables a controller. Break it to restore the underlying current.
 
 ## Install and start
 
 Install this addon and **Streams Reflowing 2.15.2** on client and server, using **Minecraft 1.21.1, NeoForge and Java 21**. **UltraTerraForged is not required.**
 
-For a dock, place a Stillwater Anchor under or beside the water within four blocks of the boats. Sneak-use with an empty hand to increase its radius. Use the Flow Wand for temporary or shaped areas.
+For a dock, place a Stillwater Anchor under or beside the water within four blocks of the boats. Right-click to adjust its radius; if there are multiple nearby ponds, enable *Connected water only*. Use the Flow Wand for temporary or shaped areas.
 
 Flow changes velocity rather than moving water blocks or changing river terrain. Calm water removes current-induced drift; it does not prevent steering, collisions or momentum.
 

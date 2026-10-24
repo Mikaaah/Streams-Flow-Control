@@ -1,4 +1,5 @@
 package nl.townsandkingdoms.streamcontrol;
+import dev.streamsreflowing.flow.StreamFlowGrid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
@@ -24,6 +25,10 @@ public final class FlowOverrides {
     }
     public static FlowRegion clientAt(int x, int y, int z) {
         return ControlConfig.ENABLED.get() ? client.at(x, y, z) : null;
+    }
+    /** A still region must not expose the wand/controller's stored facing to client flow rendering. */
+    public static byte visualAngle(FlowRegion region) {
+        return region.still() ? StreamFlowGrid.encode(0, 0) : StreamFlowGrid.encode(region.dx(), region.dz());
     }
     public static Vec3 apply(Vec3 original, BlockGetter level, BlockPos pos, FluidState state) {
         if (!state.is(FluidTags.WATER)) return original;
